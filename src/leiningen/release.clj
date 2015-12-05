@@ -5,6 +5,11 @@
   (:import
    [java.util.regex Pattern]))
 
+(def lein-shell-cmd
+  (if (.startsWith (System/getProperty "os.name") "Windows")
+    "lein.bat"
+    "lein"))
+
 (def ^:dynamic config {})
 
 (defn raise [fmt & args]
@@ -149,13 +154,13 @@
   (case (detect-deployment-strategy project)
 
     :lein-deploy
-    (sh! "lein" "deploy")
+    (sh! lein-shell-cmd "deploy")
 
     :lein-install
-    (sh! "lein" "install")
+    (sh! lein-shell-cmd "install")
 
     :clojars
-    (sh! "lein" "deploy" "clojars")
+    (sh! lein-shell-cmd "deploy" "clojars")
 
     :shell
     (apply sh! (:shell config))
@@ -202,10 +207,10 @@
         (scm! :tag (format "%s-%s" (:name project) release-version)))
       (when-not (.exists (java.io.File. jar-file-name))
         (println "creating jar and pom files...")
-        (sh! "lein" "jar")
-        (sh! "lein" "pom"))
+        (sh! lein-shell-cmd "jar")
+        (sh! lein-shell-cmd "pom"))
       (when (-> project :lein-release :build-uberjar)
-        (sh! "lein" "uberjar"))
+        (sh! lein-shell-cmd "uberjar"))
       (perform-deploy! project jar-file-name)
       (when-not (is-snapshot? (extract-project-version-from-file))
         (println (format "updating version %s => %s for next dev cycle" release-version next-dev-version))
